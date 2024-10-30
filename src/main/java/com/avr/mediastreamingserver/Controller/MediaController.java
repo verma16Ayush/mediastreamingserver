@@ -6,12 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -39,9 +35,6 @@ public class MediaController {
 
     private HashToMediaLocMap hashToMediaLocMap;
     private DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser;
-
-    @Value("#{'${mediadiscoveryloc}'.split(',')}") 
-    List<String> mediaDiscoveryLocations;
 
     public MediaController(HashToMediaLocMap hashToMediaLocMap, DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser) {
         this.hashToMediaLocMap = hashToMediaLocMap;
@@ -109,6 +102,6 @@ public class MediaController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_APPLICATION_JSON)
                 .body(directoryDiscoveryInitialiser.getDiscoveredDirectories());
-        
-    }    
+    }
+
 }

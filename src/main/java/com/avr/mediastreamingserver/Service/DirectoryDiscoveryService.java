@@ -25,23 +25,23 @@ public class DirectoryDiscoveryService {
         this.directoryDiscoveryModel = new DirectoryDiscoveryModel();
         this.directoryDiscoveryModel.setIsDirectory(true);
         File dir = new File(filePath);
-        addDiscoveredItems(directoryDiscoveryModel, dir.listFiles());
+        addDiscoveredItems(directoryDiscoveryModel, dir.listFiles(), filePath.length());
         return this.directoryDiscoveryModel;
     }
 
-    private void addDiscoveredItems(DirectoryDiscoveryModel directoryDiscoveryModel, File[] files) throws UnsupportedEncodingException {
+    private void addDiscoveredItems(DirectoryDiscoveryModel directoryDiscoveryModel, File[] files, int rootPathEndIndex) throws UnsupportedEncodingException {
         for(File file : files) {
             if(file.isDirectory()){
                 DirectoryDiscoveryModel childDirectoryDiscoveryModel = new DirectoryDiscoveryModel();
                 childDirectoryDiscoveryModel.setIsDirectory(Boolean.TRUE);
-                addDiscoveredItems(childDirectoryDiscoveryModel, file.listFiles());
+                addDiscoveredItems(childDirectoryDiscoveryModel, file.listFiles(), rootPathEndIndex);
                 directoryDiscoveryModel.getDirectoryDiscoveryModel().add(childDirectoryDiscoveryModel);
             }
             else {
                 if(!Utils.isValidVideoFile(file.getPath())) {
                     continue;
                 }
-                directoryDiscoveryModel.getFileLocAndHashRecords().add(new DirectoryDiscoveryModel.FileLocAndHashRecord(file.getPath(), hashToMediaLocMap.insertInMap(file.getPath())));
+                directoryDiscoveryModel.getFileLocAndHashRecords().add(new DirectoryDiscoveryModel.FileLocAndHashRecord(file.getPath().substring(rootPathEndIndex + 1), hashToMediaLocMap.insertInMap(file.getPath())));
             }
         }
     }
