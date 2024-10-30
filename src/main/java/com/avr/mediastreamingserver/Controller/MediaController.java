@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -27,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.avr.mediastreamingserver.Constants.Constants;
 import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
-import com.avr.mediastreamingserver.Service.DirectoryDiscoveryService;
+import com.avr.mediastreamingserver.Service.DirectoryDiscoveryInitialiser;
 import com.avr.mediastreamingserver.Service.HashToMediaLocMap;
 
 
@@ -36,15 +37,15 @@ import com.avr.mediastreamingserver.Service.HashToMediaLocMap;
 @Controller
 public class MediaController {
 
-    private DirectoryDiscoveryService directoryDiscoveryService;
     private HashToMediaLocMap hashToMediaLocMap;
+    private DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser;
 
     @Value("#{'${mediadiscoveryloc}'.split(',')}") 
     List<String> mediaDiscoveryLocations;
 
-    public MediaController(DirectoryDiscoveryService directoryDiscoveryService, HashToMediaLocMap hashToMediaLocMap) {
-        this.directoryDiscoveryService = directoryDiscoveryService;
+    public MediaController(HashToMediaLocMap hashToMediaLocMap, DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser) {
         this.hashToMediaLocMap = hashToMediaLocMap;
+        this.directoryDiscoveryInitialiser = directoryDiscoveryInitialiser;
     }
     
     @GetMapping("/")
@@ -105,14 +106,9 @@ public class MediaController {
     
     @GetMapping("/listMedia")
     public ResponseEntity<List<DirectoryDiscoveryModel>> listMediaEntity() throws UnsupportedEncodingException {
-            List<DirectoryDiscoveryModel> directoryDiscoveryModel = new ArrayList<>();
-        for(String loc : mediaDiscoveryLocations) {
-            directoryDiscoveryModel.add(directoryDiscoveryService.discover(loc));
-        }
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_APPLICATION_JSON)
-                .body(directoryDiscoveryModel);
+                .body(directoryDiscoveryInitialiser.getDiscoveredDirectories());
         
     }    
 }
