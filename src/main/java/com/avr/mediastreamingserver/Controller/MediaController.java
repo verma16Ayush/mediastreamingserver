@@ -4,13 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tomcat.util.bcel.Const;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -29,8 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.avr.mediastreamingserver.Constants.Constants;
 import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
 import com.avr.mediastreamingserver.Service.DirectoryDiscoveryService;
-
-import org.springframework.web.bind.annotation.RequestParam;
+import com.avr.mediastreamingserver.Service.HashToMediaLocMap;
 
 
 
@@ -39,12 +37,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class MediaController {
 
     private DirectoryDiscoveryService directoryDiscoveryService;
+    private HashToMediaLocMap hashToMediaLocMap;
 
     @Value("#{'${mediadiscoveryloc}'.split(',')}") 
     List<String> mediaDiscoveryLocations;
 
-    public MediaController(DirectoryDiscoveryService directoryDiscoveryService) {
+    public MediaController(DirectoryDiscoveryService directoryDiscoveryService, HashToMediaLocMap hashToMediaLocMap) {
         this.directoryDiscoveryService = directoryDiscoveryService;
+        this.hashToMediaLocMap = hashToMediaLocMap;
     }
     
     @GetMapping("/")
@@ -57,9 +57,11 @@ public class MediaController {
         return "hello";
     }
 
-    @GetMapping("/stream/5/{fileName}")
-    public ResponseEntity<Resource> streamMediaFileRandomAccessFile(@PathVariable("fileName") String fileName, @RequestHeader HttpHeaders httpRequestHeaders) throws IOException {
-        Path filePath = Paths.get(Constants.MEDIA_FOLDER_LOC).resolve(fileName).normalize();
+    @GetMapping("/stream/5/{fileHash}")
+    public ResponseEntity<Resource> streamMediaFileRandomAccessFile(@PathVariable("fileHash") String fileHash, @RequestHeader HttpHeaders httpRequestHeaders) throws IOException {
+        String fileName = hashToMediaLocMap.getFileLocFromHash(fileHash);
+        Path filePath = Path.of(fileName).normalize();
+
         File mediaFile = filePath.toFile();
         long mediaFileLength = mediaFile.length();
 
@@ -102,7 +104,7 @@ public class MediaController {
     }
     
     @GetMapping("/listMedia")
-    public ResponseEntity<List<DirectoryDiscoveryModel>> listMediaEntity() {
+    public ResponseEntity<List<DirectoryDiscoveryModel>> listMediaEntity() throws UnsupportedEncodingException {
             List<DirectoryDiscoveryModel> directoryDiscoveryModel = new ArrayList<>();
         for(String loc : mediaDiscoveryLocations) {
             directoryDiscoveryModel.add(directoryDiscoveryService.discover(loc));
@@ -111,6 +113,6 @@ public class MediaController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_APPLICATION_JSON)
                 .body(directoryDiscoveryModel);
-                
+        
     }    
 }

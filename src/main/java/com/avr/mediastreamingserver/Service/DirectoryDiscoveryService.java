@@ -1,22 +1,27 @@
 package com.avr.mediastreamingserver.Service;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
 import com.avr.mediastreamingserver.Utils.Utils;
 
-import lombok.NoArgsConstructor;
 
 @Service
 public class DirectoryDiscoveryService {
 
     DirectoryDiscoveryModel directoryDiscoveryModel;
 
+    @Autowired
+    HashToMediaLocMap hashToMediaLocMap;
+    
+    
     public DirectoryDiscoveryService() {}
     
-    public DirectoryDiscoveryModel discover(String filePath) {
+    public DirectoryDiscoveryModel discover(String filePath) throws UnsupportedEncodingException {
         this.directoryDiscoveryModel = new DirectoryDiscoveryModel();
         this.directoryDiscoveryModel.setIsDirectory(true);
         File dir = new File(filePath);
@@ -24,7 +29,7 @@ public class DirectoryDiscoveryService {
         return this.directoryDiscoveryModel;
     }
 
-    private void addDiscoveredItems(DirectoryDiscoveryModel directoryDiscoveryModel, File[] files) {
+    private void addDiscoveredItems(DirectoryDiscoveryModel directoryDiscoveryModel, File[] files) throws UnsupportedEncodingException {
         for(File file : files) {
             if(file.isDirectory()){
                 DirectoryDiscoveryModel childDirectoryDiscoveryModel = new DirectoryDiscoveryModel();
@@ -36,7 +41,7 @@ public class DirectoryDiscoveryService {
                 if(!Utils.isValidVideoFile(file.getPath())) {
                     continue;
                 }
-                directoryDiscoveryModel.getFilePath().add(file.getPath());
+                directoryDiscoveryModel.getFileLocAndHashRecords().add(new DirectoryDiscoveryModel.FileLocAndHashRecord(file.getPath(), hashToMediaLocMap.insertInMap(file.getPath())));
             }
         }
     }

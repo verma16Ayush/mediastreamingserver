@@ -9,14 +9,16 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DirectoryDiscoveryModel {
+    public record FileLocAndHashRecord(String filePath, String hash) {}
     Boolean isDirectory;
     String directoyPath;
     List<DirectoryDiscoveryModel> directoryDiscoveryModel;
-    List<String> filePath;
+    List<FileLocAndHashRecord> fileLocAndHashRecords;
+
     public DirectoryDiscoveryModel() {
         this.isDirectory = false;
         this.directoyPath = "";
         this.directoryDiscoveryModel = new ArrayList<>();
-        this.filePath = new ArrayList<>();
+        this.fileLocAndHashRecords = new ArrayList<>();
     }
 }
