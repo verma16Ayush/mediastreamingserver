@@ -18,7 +18,6 @@ public class DirectoryDiscoveryService {
     @Autowired
     HashToMediaLocMap hashToMediaLocMap;
     
-    
     public DirectoryDiscoveryService() {}
     
     public DirectoryDiscoveryModel discover(String filePath) throws UnsupportedEncodingException {

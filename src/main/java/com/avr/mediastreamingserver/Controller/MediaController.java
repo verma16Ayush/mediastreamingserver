@@ -51,7 +51,7 @@ public class MediaController {
         return "hello";
     }
 
-    @GetMapping("/stream/5/{fileHash}")
+    @GetMapping("/stream/{fileHash}")
     public ResponseEntity<Resource> streamMediaFileRandomAccessFile(@PathVariable("fileHash") String fileHash, @RequestHeader HttpHeaders httpRequestHeaders) throws IOException {
         String fileName = hashToMediaLocMap.getFileLocFromHash(fileHash);
         Path filePath = Path.of(fileName).normalize();
@@ -68,12 +68,11 @@ public class MediaController {
         
         if(httpRanges.isEmpty()) {
             Resource resource = new UrlResource(mediaFile.toURI());
-            ResponseEntity<Resource> responseEntity = ResponseEntity.ok()
-                                                    .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
-                                                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(mediaFileLength))
-                                                    .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
-                                                    .body(resource);
-            return responseEntity;
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(mediaFileLength))
+                    .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
+                    .body(resource);
         }
         
         String[] rangeLimits = httpRanges.getFirst().toString().split("-");

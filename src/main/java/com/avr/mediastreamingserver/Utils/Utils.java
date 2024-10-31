@@ -3,9 +3,6 @@ package com.avr.mediastreamingserver.Utils;
 import com.avr.mediastreamingserver.Constants.Constants;
 
 public class Utils {
-    public static long getRangeEnd(long rangeStart, long maxChunkSize, long fileLength) {
-        return rangeStart  + maxChunkSize >= fileLength ? fileLength - 1 : rangeStart + maxChunkSize;
-    }
 
     public static boolean isValidVideoFile(String filePath) {
         int indexOfExt = filePath.lastIndexOf(".");

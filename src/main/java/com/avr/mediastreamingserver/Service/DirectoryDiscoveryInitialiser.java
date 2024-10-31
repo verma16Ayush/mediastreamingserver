@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class DirectoryDiscoveryInitialiser {
 
@@ -27,6 +29,7 @@ public class DirectoryDiscoveryInitialiser {
         directoryDiscoveryModel = new ArrayList<>();
         for(String loc : mediaDiscoveryLocations) {
             directoryDiscoveryModel.add(directoryDiscoveryService.discover(loc));
+            log.info("Media files discovered in: " + loc);
         }
     }
 

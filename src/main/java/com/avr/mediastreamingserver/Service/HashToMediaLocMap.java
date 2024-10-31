@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -15,19 +16,21 @@ public class HashToMediaLocMap {
 
     Map<String, String> hashMap;
     MessageDigest messageDigest;
+    String randomString;
 
     public HashToMediaLocMap() throws NoSuchAlgorithmException {
         this.hashMap = new HashMap<>();
         messageDigest = MessageDigest.getInstance(Constants.HASH_ALGORITHM_MD5);
+        randomString = UUID.randomUUID().toString().replace("-", "").substring(0, 6);
     }
 
     
     // returns the hash and inserts into the map
     public String insertInMap(String fileLoc) throws UnsupportedEncodingException{
-        byte[] byteArray = fileLoc.getBytes(Constants.ENCODING_TYPE_UTF8);
-        String digestedMsg = digestToReadableString(messageDigest.digest(byteArray));
-        hashMap.put(digestedMsg, fileLoc);
-        return digestedMsg;
+        byte[] byteArray = fileLoc.concat(randomString).getBytes(Constants.ENCODING_TYPE_UTF8);
+        String readableDigestedMsg = digestToReadableString(messageDigest.digest(byteArray));
+        hashMap.put(readableDigestedMsg, fileLoc);
+        return readableDigestedMsg;
     }
 
     public String getFileLocFromHash(String hashString) {

@@ -11,6 +11,7 @@ public class Constants {
     public static final List<String> ACCPETED_VIDEO_FILE_FORMATS = List.of("mkv", "mp4", "flv");
     public static final String HASH_ALGORITHM_MD5 = "MD5";
     public static final String ENCODING_TYPE_UTF8 = "UTF-8";
+    
     public Constants() {
     }
 }
