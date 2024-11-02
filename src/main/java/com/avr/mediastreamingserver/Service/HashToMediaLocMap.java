@@ -16,18 +16,16 @@ public class HashToMediaLocMap {
 
     Map<String, String> hashMap;
     MessageDigest messageDigest;
-    String randomString;
 
     public HashToMediaLocMap() throws NoSuchAlgorithmException {
         this.hashMap = new HashMap<>();
         messageDigest = MessageDigest.getInstance(Constants.HASH_ALGORITHM_MD5);
-        randomString = UUID.randomUUID().toString().replace("-", "").substring(0, 6);
     }
 
     
     // returns the hash and inserts into the map
     public String insertInMap(String fileLoc) throws UnsupportedEncodingException{
-        byte[] byteArray = fileLoc.concat(randomString).getBytes(Constants.ENCODING_TYPE_UTF8);
+        byte[] byteArray = fileLoc.getBytes(Constants.ENCODING_TYPE_UTF8);
         String readableDigestedMsg = digestToReadableString(messageDigest.digest(byteArray));
         hashMap.put(readableDigestedMsg, fileLoc);
         return readableDigestedMsg;

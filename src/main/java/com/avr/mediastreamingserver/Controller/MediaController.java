@@ -26,6 +26,7 @@ import com.avr.mediastreamingserver.Constants.Constants;
 import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
 import com.avr.mediastreamingserver.Service.DirectoryDiscoveryInitialiser;
 import com.avr.mediastreamingserver.Service.HashToMediaLocMap;
+import com.avr.mediastreamingserver.Utils.Utils;
 
 
 
@@ -69,7 +70,7 @@ public class MediaController {
         if(httpRanges.isEmpty()) {
             Resource resource = new UrlResource(mediaFile.toURI());
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
+                    .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(Utils.getFileExtension(fileName)))
                     .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(mediaFileLength))
                     .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
                     .body(resource);
@@ -89,7 +90,7 @@ public class MediaController {
 
         Resource resource = new InputStreamResource(new ByteArrayInputStream(data));
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-            .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
+            .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(fileName))
             .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
             .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
             .header(HttpHeaders.CONTENT_RANGE, "bytes " + rangeStart + "-" + rangeEnd + "/" + mediaFileLength)

@@ -21,7 +21,7 @@ public class UtilsTest {
     
     @ParameterizedTest
     @MethodSource("isValidVIdeoFileTestParams")
-    void givenilesWhenIsValidVideoFileIsCalledThenVerifyTheFunctionReturnsAppropirateValue(String fileName, Boolean expectedReturnVal) {
+    void givenFilesWhenIsValidVideoFileIsCalledThenVerifyTheFunctionReturnsAppropirateValue(String fileName, Boolean expectedReturnVal) {
         Assertions.assertEquals(expectedReturnVal, Utils.isValidVideoFile(fileName));
     }
 }
