@@ -24,9 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.avr.mediastreamingserver.Constants.Constants;
 import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
+import com.avr.mediastreamingserver.Model.FileLocAndHashRecord;
 import com.avr.mediastreamingserver.Service.DirectoryDiscoveryInitialiser;
-import com.avr.mediastreamingserver.Service.HashToMediaLocMap;
+import com.avr.mediastreamingserver.Service.MediaStore;
 import com.avr.mediastreamingserver.Utils.Utils;
+
 
 
 
@@ -34,11 +36,11 @@ import com.avr.mediastreamingserver.Utils.Utils;
 @Controller
 public class MediaController {
 
-    private HashToMediaLocMap hashToMediaLocMap;
+    private MediaStore mediaStore;
     private DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser;
 
-    public MediaController(HashToMediaLocMap hashToMediaLocMap, DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser) {
-        this.hashToMediaLocMap = hashToMediaLocMap;
+    public MediaController(MediaStore mediaStore, DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser) {
+        this.mediaStore = mediaStore;
         this.directoryDiscoveryInitialiser = directoryDiscoveryInitialiser;
     }
     
@@ -54,7 +56,7 @@ public class MediaController {
 
     @GetMapping("/stream/{fileHash}")
     public ResponseEntity<Resource> streamMediaFileRandomAccessFile(@PathVariable("fileHash") String fileHash, @RequestHeader HttpHeaders httpRequestHeaders) throws IOException {
-        String fileName = hashToMediaLocMap.getFileLocFromHash(fileHash);
+        String fileName = mediaStore.getFileLocFromHash(fileHash);
         Path filePath = Path.of(fileName).normalize();
 
         File mediaFile = filePath.toFile();
@@ -90,18 +92,26 @@ public class MediaController {
 
         Resource resource = new InputStreamResource(new ByteArrayInputStream(data));
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-            .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(fileName))
+            // .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(fileName))
+            .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
             .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
             .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
             .header(HttpHeaders.CONTENT_RANGE, "bytes " + rangeStart + "-" + rangeEnd + "/" + mediaFileLength)
             .body(resource);
     }
     
-    @GetMapping("/listMedia")
-    public ResponseEntity<List<DirectoryDiscoveryModel>> listMediaEntity() throws UnsupportedEncodingException {
+    @GetMapping("/listMediaWithDirectory")
+    public ResponseEntity<List<DirectoryDiscoveryModel>> listMediaWithDirectory() throws UnsupportedEncodingException {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_APPLICATION_JSON)
                 .body(directoryDiscoveryInitialiser.getDiscoveredDirectories());
     }
 
+    @GetMapping("/listMedia")
+    public ResponseEntity<List<FileLocAndHashRecord>> getMethodName() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_APPLICATION_JSON)
+                .body(mediaStore.getFileLocAndHashRecords());
+    }
+    
 }

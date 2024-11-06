@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DirectoryDiscoveryModel {
-    public record FileLocAndHashRecord(String filePath, String hash) {}
+    
     Boolean isDirectory;
     String directoyPath;
     List<DirectoryDiscoveryModel> directoryDiscoveryModel;

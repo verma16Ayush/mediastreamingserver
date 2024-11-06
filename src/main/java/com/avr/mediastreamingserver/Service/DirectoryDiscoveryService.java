@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
+import com.avr.mediastreamingserver.Model.FileLocAndHashRecord;
 import com.avr.mediastreamingserver.Utils.Utils;
 
 
@@ -16,7 +17,7 @@ public class DirectoryDiscoveryService {
     DirectoryDiscoveryModel directoryDiscoveryModel;
 
     @Autowired
-    HashToMediaLocMap hashToMediaLocMap;
+    MediaStore mediaStore;
     
     public DirectoryDiscoveryService() {}
     
@@ -33,6 +34,7 @@ public class DirectoryDiscoveryService {
             if(file.isDirectory()){
                 DirectoryDiscoveryModel childDirectoryDiscoveryModel = new DirectoryDiscoveryModel();
                 childDirectoryDiscoveryModel.setIsDirectory(Boolean.TRUE);
+                childDirectoryDiscoveryModel.setDirectoyPath(file.getPath().substring(rootPathEndIndex + 1));
                 addDiscoveredItems(childDirectoryDiscoveryModel, file.listFiles(), rootPathEndIndex);
                 directoryDiscoveryModel.getDirectoryDiscoveryModel().add(childDirectoryDiscoveryModel);
             }
@@ -40,7 +42,7 @@ public class DirectoryDiscoveryService {
                 if(!Utils.isValidVideoFile(file.getPath())) {
                     continue;
                 }
-                directoryDiscoveryModel.getFileLocAndHashRecords().add(new DirectoryDiscoveryModel.FileLocAndHashRecord(file.getPath().substring(rootPathEndIndex + 1), hashToMediaLocMap.insertInMap(file.getPath())));
+                directoryDiscoveryModel.getFileLocAndHashRecords().add(new FileLocAndHashRecord(file.getPath().substring(rootPathEndIndex + 1), mediaStore.insertInMapAndRecordList(file.getPath())));
             }
         }
     }

@@ -3,31 +3,36 @@ package com.avr.mediastreamingserver.Service;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.avr.mediastreamingserver.Constants.Constants;
+import com.avr.mediastreamingserver.Model.FileLocAndHashRecord;
 
 @Service
-public class HashToMediaLocMap {
+public class MediaStore {
 
     Map<String, String> hashMap;
+    List<FileLocAndHashRecord> fileLocAndHashRecords;
     MessageDigest messageDigest;
 
-    public HashToMediaLocMap() throws NoSuchAlgorithmException {
+    public MediaStore() throws NoSuchAlgorithmException {
         this.hashMap = new HashMap<>();
+        this.fileLocAndHashRecords = new ArrayList<>();
         messageDigest = MessageDigest.getInstance(Constants.HASH_ALGORITHM_MD5);
     }
 
     
     // returns the hash and inserts into the map
-    public String insertInMap(String fileLoc) throws UnsupportedEncodingException{
+    public String insertInMapAndRecordList(String fileLoc) throws UnsupportedEncodingException{
         byte[] byteArray = fileLoc.getBytes(Constants.ENCODING_TYPE_UTF8);
         String readableDigestedMsg = digestToReadableString(messageDigest.digest(byteArray));
         hashMap.put(readableDigestedMsg, fileLoc);
+        fileLocAndHashRecords.add(new FileLocAndHashRecord(fileLoc, readableDigestedMsg));
         return readableDigestedMsg;
     }
 
@@ -46,5 +51,9 @@ public class HashToMediaLocMap {
             sb.append(s);
         }
         return sb.toString();
+    }
+
+    public List<FileLocAndHashRecord> getFileLocAndHashRecords() {
+        return this.fileLocAndHashRecords;
     }
 }
