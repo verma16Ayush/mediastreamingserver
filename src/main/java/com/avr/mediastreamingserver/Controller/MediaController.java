@@ -4,8 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.springframework.core.io.InputStreamResource;
@@ -23,11 +23,26 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import lombok.extern.slf4j.Slf4j;
 
 import com.avr.mediastreamingserver.Constants.Constants;
+import com.avr.mediastreamingserver.Model.DirectoryDiscoveryModel;
+import com.avr.mediastreamingserver.Model.FileLocAndHashRecord;
+import com.avr.mediastreamingserver.Service.DirectoryDiscoveryInitialiser;
+import com.avr.mediastreamingserver.Service.MediaStore;
+import com.avr.mediastreamingserver.Utils.Utils;
+
+
 
 
 @Slf4j
 @Controller
 public class MediaController {
+
+    private MediaStore mediaStore;
+    private DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser;
+
+    public MediaController(MediaStore mediaStore, DirectoryDiscoveryInitialiser directoryDiscoveryInitialiser) {
+        this.mediaStore = mediaStore;
+        this.directoryDiscoveryInitialiser = directoryDiscoveryInitialiser;
+    }
     
     @GetMapping("/")
     private String logRequestParams() {
@@ -39,9 +54,11 @@ public class MediaController {
         return "hello";
     }
 
-    @GetMapping("/stream/5/{fileName}")
-    public ResponseEntity<Resource> streamMediaFileRandomAccessFil(@PathVariable("fileName") String fileName, @RequestHeader HttpHeaders httpRequestHeaders) throws IOException {
-        Path filePath = Paths.get(Constants.MEDIA_FOLDER_LOC).resolve(fileName).normalize();
+    @GetMapping("/stream/{fileHash}")
+    public ResponseEntity<Resource> streamMediaFileRandomAccessFile(@PathVariable("fileHash") String fileHash, @RequestHeader HttpHeaders httpRequestHeaders) throws IOException {
+        String fileName = mediaStore.getFileLocFromHash(fileHash);
+        Path filePath = Path.of(fileName).normalize();
+
         File mediaFile = filePath.toFile();
         long mediaFileLength = mediaFile.length();
 
@@ -54,12 +71,11 @@ public class MediaController {
         
         if(httpRanges.isEmpty()) {
             Resource resource = new UrlResource(mediaFile.toURI());
-            ResponseEntity<Resource> responseEntity = ResponseEntity.ok()
-                                                    .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
-                                                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(mediaFileLength))
-                                                    .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
-                                                    .body(resource);
-            return responseEntity;
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(Utils.getFileExtension(fileName)))
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(mediaFileLength))
+                    .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
+                    .body(resource);
         }
         
         String[] rangeLimits = httpRanges.getFirst().toString().split("-");
@@ -76,6 +92,7 @@ public class MediaController {
 
         Resource resource = new InputStreamResource(new ByteArrayInputStream(data));
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+            // .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(fileName))
             .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
             .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
             .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
@@ -83,6 +100,18 @@ public class MediaController {
             .body(resource);
     }
     
-    
+    @GetMapping("/listMediaWithDirectory")
+    public ResponseEntity<List<DirectoryDiscoveryModel>> listMediaWithDirectory() throws UnsupportedEncodingException {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_APPLICATION_JSON)
+                .body(directoryDiscoveryInitialiser.getDiscoveredDirectories());
+    }
+
+    @GetMapping("/listMedia")
+    public ResponseEntity<List<FileLocAndHashRecord>> getMethodName() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_APPLICATION_JSON)
+                .body(mediaStore.getFileLocAndHashRecords());
+    }
     
 }
