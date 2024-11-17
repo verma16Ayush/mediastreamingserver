@@ -10,8 +10,9 @@ public class Constants {
     public static final String CONTENT_TYPE_VIDEO_MP4 = "video/mp4";
     public static final String CONTENT_TYPE_VIDEO_MKV = "video/mkv";
     public static final Map<String, String> EXTENSION_TO_CONTENT_TYPE_MAP = new HashMap<String,String>() {{
-        put("mp4", "video/mp4");
-        put("mkv", "video/mkv");
+        // put("mp4", "video/mp4");
+        // put("mkv", "video/matroska");
+        // put("mkv", "video/webm");
     }};
     public static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
     public static final String ACCEPTED_RANGE_BYTES = "bytes";

@@ -42,7 +42,13 @@ public class DirectoryDiscoveryService {
                 if(!Utils.isValidVideoFile(file.getPath())) {
                     continue;
                 }
-                directoryDiscoveryModel.getFileLocAndHashRecords().add(new FileLocAndHashRecord(file.getPath().substring(rootPathEndIndex + 1), mediaStore.insertInMapAndRecordList(file.getPath())));
+                directoryDiscoveryModel.getFileLocAndHashRecords().add(
+                    new FileLocAndHashRecord(
+                        file.getPath().substring(rootPathEndIndex + 1), 
+                        mediaStore.insertInMapAndRecordList(file.getPath()), 
+                        file.getPath().substring(file.getPath().lastIndexOf("/") + 1)
+                    )
+                );
             }
         }
     }

@@ -32,7 +32,7 @@ public class MediaStore {
         byte[] byteArray = fileLoc.getBytes(Constants.ENCODING_TYPE_UTF8);
         String readableDigestedMsg = digestToReadableString(messageDigest.digest(byteArray));
         hashMap.put(readableDigestedMsg, fileLoc);
-        fileLocAndHashRecords.add(new FileLocAndHashRecord(fileLoc, readableDigestedMsg));
+        fileLocAndHashRecords.add(new FileLocAndHashRecord(fileLoc, readableDigestedMsg, fileLoc.substring(fileLoc.lastIndexOf("/") + 1)));
         return readableDigestedMsg;
     }
 

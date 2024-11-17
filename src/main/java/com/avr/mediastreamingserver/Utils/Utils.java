@@ -15,5 +15,5 @@ public class Utils {
             return filePath.substring(indexOfExt + 1);
         }
         return "";
-    } 
+    }
 }

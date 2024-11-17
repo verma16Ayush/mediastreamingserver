@@ -3,6 +3,7 @@ package com.avr.mediastreamingserver.Controller;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
@@ -53,7 +54,7 @@ public class MediaController {
         log.error("Error Message!");  
         return "hello";
     }
-
+    
     @GetMapping("/stream/{fileHash}")
     public ResponseEntity<Resource> streamMediaFileRandomAccessFile(@PathVariable("fileHash") String fileHash, @RequestHeader HttpHeaders httpRequestHeaders) throws IOException {
         String fileName = mediaStore.getFileLocFromHash(fileHash);
@@ -62,44 +63,64 @@ public class MediaController {
         File mediaFile = filePath.toFile();
         long mediaFileLength = mediaFile.length();
 
-        if(!mediaFile.exists()){
-            log.error("File does not exist");
-            throw new IOException("file does not exist");
+        if (!mediaFile.exists()) {
+            throw new IOException("File does not exist");
         }
 
         List<HttpRange> httpRanges = httpRequestHeaders.getRange();
-        
-        if(httpRanges.isEmpty()) {
+
+        if (httpRanges.isEmpty()) {
             Resource resource = new UrlResource(mediaFile.toURI());
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(Utils.getFileExtension(fileName)))
+                    .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
                     .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(mediaFileLength))
                     .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
                     .body(resource);
         }
-        
-        String[] rangeLimits = httpRanges.getFirst().toString().split("-");
-        RandomAccessFile randomAccessFile = new RandomAccessFile(filePath.toString(), "r");
-        Long rangeStart = Long.parseLong(rangeLimits[0]);
-        Long rangeEnd = rangeLimits.length > 1 ? Long.parseLong(rangeLimits[1]) : mediaFileLength - 1;
-        Long rangeLength = rangeEnd - rangeStart + 1;
 
+        HttpRange range = httpRanges.get(0);
+        long rangeStart = range.getRangeStart(mediaFileLength);
+        long rangeEnd = range.getRangeEnd(mediaFileLength);
+        long rangeLength = rangeEnd - rangeStart + 1;
+
+        RandomAccessFile randomAccessFile = new RandomAccessFile(mediaFile, "r");
         randomAccessFile.seek(rangeStart);
-        byte[] data = new byte[rangeLength.intValue()];
 
-        randomAccessFile.readFully(data);
-        randomAccessFile.close();
+        InputStreamResource resource = new InputStreamResource(new InputStream() {
+            private long remaining = rangeLength;
 
-        Resource resource = new InputStreamResource(new ByteArrayInputStream(data));
+            @Override
+            public int read() throws IOException {
+                if (remaining <= 0) return -1;
+                remaining--;
+                return randomAccessFile.read();
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                if (remaining <= 0) return -1;
+                len = (int) Math.min(len, remaining);
+                int bytesRead = randomAccessFile.read(b, off, len);
+                if (bytesRead > 0) remaining -= bytesRead;
+                return bytesRead;
+            }
+
+            @Override
+            public void close() throws IOException {
+                randomAccessFile.close();
+            }
+        });
+
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-            // .header(HttpHeaders.CONTENT_TYPE, Constants.EXTENSION_TO_CONTENT_TYPE_MAP.get(fileName))
-            .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
-            .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
-            .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
-            .header(HttpHeaders.CONTENT_RANGE, "bytes " + rangeStart + "-" + rangeEnd + "/" + mediaFileLength)
-            .body(resource);
+                .header(HttpHeaders.CONTENT_TYPE, Constants.CONTENT_TYPE_VIDEO_MP4)
+                .header(HttpHeaders.ACCEPT_RANGES, Constants.ACCEPTED_RANGE_BYTES)
+                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .header(HttpHeaders.CONTENT_RANGE, "bytes " + rangeStart + "-" + rangeEnd + "/" + mediaFileLength)
+                .body(resource);
     }
-    
+
     @GetMapping("/listMediaWithDirectory")
     public ResponseEntity<List<DirectoryDiscoveryModel>> listMediaWithDirectory() throws UnsupportedEncodingException {
         return ResponseEntity.ok()
