@@ -16,7 +16,6 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-*.mp4
 
 ### IntelliJ IDEA ###
 .idea
@@ -36,4 +35,3 @@ out/
 
 ### VS Code ###
 .vscode/
-.DS_Store

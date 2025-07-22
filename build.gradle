@@ -1,8 +1,7 @@
 plugins {
 	id 'java'
-	id 'war'
-	id 'org.springframework.boot' version '3.3.4'
-	id 'io.spring.dependency-management' version '1.1.6'
+	id 'org.springframework.boot' version '3.5.4-SNAPSHOT'
+	id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.avr'
@@ -10,7 +9,7 @@ version = '0.0.1-SNAPSHOT'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(23)
+		languageVersion = JavaLanguageVersion.of(17)
 	}
 }
 
@@ -22,26 +21,18 @@ configurations {
 
 repositories {
 	mavenCentral()
+	maven { url = 'https://repo.spring.io/snapshot' }
 }
 
 dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-	// providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
-    // https://mvnrepository.com/artifact/org.bytedeco/javacv
-    // implementation group: 'org.bytedeco', name: 'javacv', version: '1.5.7'
-    // implementation group: 'org.bytedeco', name: 'ffmpeg-platform', version: '4.4.1'
-    // https://mvnrepository.com/artifact/uk.co.caprica/vlcj
-    // implementation group: 'uk.co.caprica', name: 'vlcj', version: '4.4.4'
-    implementation 'org.jcodec:jcodec:0.2.3'
-
+	// https://mvnrepository.com/artifact/com.h2database/h2
+	testImplementation("com.h2database:h2:2.3.232")
 }
 
 tasks.named('test') {
