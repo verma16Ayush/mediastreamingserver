@@ -1,5 +1,6 @@
 package com.avr.mediastreamingserver.controllers;
 
+import com.avr.mediastreamingserver.exceptions.FFmpegServiceException;
 import com.avr.mediastreamingserver.responseTypes.HealthCheckResponse;
 import com.avr.mediastreamingserver.services.FFmpegService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +23,16 @@ public class Controller {
     private int port;
 
     @GetMapping("/healthCheck")
-    public Object healthCheck() throws IOException {
+    public ResponseEntity<HealthCheckResponse> healthCheck() throws FFmpegServiceException, UnknownHostException {
         var ffmpegVersion = fFmpegService.ensureFFmpegInstalled();
-        HealthCheckResponse healthCheckResponse = new HealthCheckResponse(InetAddress.getLocalHost().getHostAddress(), port, ffmpegVersion);
-        healthCheckResponse.set
-        return ResponseEntity.status(200).;
-        return "the application is up and running on: " + InetAddress.getLocalHost().getHostAddress() + ":" + port;
+        HealthCheckResponse healthCheckResponse = new HealthCheckResponse();
+        healthCheckResponse.setHostAddress(InetAddress.getLocalHost().getHostAddress());
+        healthCheckResponse.setPort(String.valueOf(port));
+        healthCheckResponse.setFfmpegVersion(ffmpegVersion);
+        return ResponseEntity
+                .status(200)
+                .body(healthCheckResponse);
     }
+
 
 }
