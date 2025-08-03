@@ -1,12 +1,12 @@
 package com.avr.mediastreamingserver.services;
 
-import com.avr.mediastreamingserver.exceptions.VideoServiceException;
-import com.avr.mediastreamingserver.models.Video;
-import com.avr.mediastreamingserver.repositories.VideoRepository;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.util.List;
+import java.util.Optional;
 
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.catalina.util.StringUtil;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -14,12 +14,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
-import java.util.List;
-import java.util.Optional;
+import com.avr.mediastreamingserver.exceptions.VideoServiceException;
+import com.avr.mediastreamingserver.models.Video;
+import com.avr.mediastreamingserver.repositories.VideoRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j

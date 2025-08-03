@@ -76,8 +76,13 @@ public class Utils {
 
     public static String createDirIfNotExists(String dirPath, String directoryName) {
         File parentDirectory = new File(dirPath);
-        if(!parentDirectory.isDirectory())
+        if(!parentDirectory.exists()) {
+            if(!parentDirectory.mkdirs()) {
+                return "";
+            }
+        } else if(!parentDirectory.isDirectory()) {
             return "";
+        }
         String newDirPath = dirPath.concat("/").concat(directoryName);
         File newDir = new File(newDirPath);
         if(!newDir.exists()) {

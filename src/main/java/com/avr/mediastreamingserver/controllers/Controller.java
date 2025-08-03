@@ -1,26 +1,24 @@
 package com.avr.mediastreamingserver.controllers;
 
-import com.avr.mediastreamingserver.exceptions.FFmpegServiceException;
-import com.avr.mediastreamingserver.exceptions.VideoServiceException;
-import com.avr.mediastreamingserver.responseTypes.HealthCheckResponse;
-import com.avr.mediastreamingserver.services.FFmpegService;
-import com.avr.mediastreamingserver.services.VideoService;
-import com.avr.mediastreamingserver.models.Video;
-import com.avr.mediastreamingserver.repositories.VideoRepository;
-import static com.avr.mediastreamingserver.constants.Constants.*;
+import static com.avr.mediastreamingserver.constants.Constants.ACCEPTED_RANGE_BYTES;
+import static com.avr.mediastreamingserver.constants.Constants.CONTENT_TYPE_VIDEO_MP4;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,15 +26,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.Map;
+import com.avr.mediastreamingserver.exceptions.FFmpegServiceException;
+import com.avr.mediastreamingserver.exceptions.VideoServiceException;
+import com.avr.mediastreamingserver.models.Video;
+import com.avr.mediastreamingserver.responseTypes.HealthCheckResponse;
+import com.avr.mediastreamingserver.services.FFmpegService;
+import com.avr.mediastreamingserver.services.VideoService;
 
 @RestController
 public class Controller {
