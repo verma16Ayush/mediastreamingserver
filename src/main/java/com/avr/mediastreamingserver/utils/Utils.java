@@ -1,41 +1,52 @@
 package com.avr.mediastreamingserver.utils;
 
+import org.aspectj.bridge.Message;
+
+import static com.avr.mediastreamingserver.constants.Constants.ACCPETED_VIDEO_FILE_FORMATS;
+
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 public class Utils {
     public static boolean isValidVideoFile(File file) {
         String filePath = file.getPath();
-        String[] videFileExtensions = {".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv", ".webm"};
         String lowerPath = filePath.toLowerCase();
-        return Arrays.stream(videFileExtensions).anyMatch(
+        return ACCPETED_VIDEO_FILE_FORMATS.stream().anyMatch(
                 lowerPath::endsWith
         );
     }
 
-    public static String getSHA256Hash(File file) throws NoSuchAlgorithmException, IOException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        try (FileInputStream fis = new FileInputStream(file)) {
-            byte[] byteArray = new byte[8192];
-            int bytesCount = 0;
-            while ((bytesCount = fis.read(byteArray)) != -1) {
-                digest.update(byteArray, 0, bytesCount);
-            }
 
+    public static String getPartialHashWithFileSize(File file, int size) throws NoSuchAlgorithmException, IOException {
+        try(FileInputStream fis = new FileInputStream(file)) {
+            final int HASH_CHUNK_SIZE = size * 1024 * 1024;
+            StringBuilder sb = new StringBuilder();
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int bytesRead = 0;
+            int totalRead = 0;
+            while ((bytesRead = fis.read(buffer)) != -1 && totalRead < HASH_CHUNK_SIZE) {
+                int actualBytesToHash = Math.min(bytesRead, HASH_CHUNK_SIZE - totalRead);
+                messageDigest.update(buffer, 0, actualBytesToHash);
+                totalRead += actualBytesToHash;
+                if (totalRead >= HASH_CHUNK_SIZE)
+                    break;
+            }
+            ByteBuffer fileSizeByteBuffer = ByteBuffer.allocate(Long.BYTES);
+            fileSizeByteBuffer.putLong(file.length());
+            messageDigest.update(fileSizeByteBuffer.array());
+
+            byte[] finalHash = messageDigest.digest();
+            for(byte b : finalHash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
         }
-        byte[] hashedBytes = digest.digest();
-        StringBuilder sb = new StringBuilder();
-        for(byte b : hashedBytes) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
     }
 
     public static String getFileNameFromPath(String path) {
@@ -48,7 +59,7 @@ public class Utils {
     }
 
     public static long getDurationInMillis(String durationString) {
-        // "DURATION": "01:47:33.959000000"
+        // "DURATION": ""01:47:33.959000000""
         String[] parts = durationString.split(":");
         if(parts.length != 3) {
             return 0;
@@ -77,4 +88,17 @@ public class Utils {
         return newDirPath;
     }
 
+    public static boolean directoryContainsFile(File directory, String fileNameToFind){
+        if(!directory.exists() || !directory.isDirectory()) {
+            return false;
+        }
+        FilenameFilter filter = new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.equalsIgnoreCase(fileNameToFind);
+            }
+        };
+        File[] matchingFiles = directory.listFiles(filter);
+        return matchingFiles != null && matchingFiles.length > 0;
+    }
 }

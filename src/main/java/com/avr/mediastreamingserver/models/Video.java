@@ -24,6 +24,7 @@ public class Video {
     private String description;
     private String thumbnailPath;
     private LocalDateTime uploadedAt;
+    private String resourcePath;
 }
 
 /*

@@ -2,11 +2,12 @@ package com.avr.mediastreamingserver.services;
 
 import com.avr.mediastreamingserver.exceptions.FFmpegServiceException;
 import com.avr.mediastreamingserver.models.Video;
+import static com.avr.mediastreamingserver.utils.Utils.*;
+
 import com.avr.mediastreamingserver.utils.Utils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -17,6 +18,7 @@ import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,7 +81,7 @@ public class FFmpegService {
         File videoFile = new File(videoFilePath);
         if(!mediaRoot.exists() || !videoFile.exists())
             return null;
-        String newDirPath = Utils.createDirIfNotExists(scanningRoot, "thumbnails");
+        String newDirPath = createDirIfNotExists(scanningRoot, "thumbnails");
         if(newDirPath.isEmpty()) {
             throw new FFmpegServiceException("could not generate thumbnail directory");
         }
@@ -104,26 +106,27 @@ public class FFmpegService {
         }
     }
 
-    public Video getVideoObjectFromFilePath(String scanningRoot, String path) throws FFmpegServiceException {
+    public Video getVideoObjectFromFilePath(String scanningRoot, String videoFilePath) throws FFmpegServiceException {
         Video video = new Video();
-        File videoFile = new File(path);
-        if(!videoFile.exists() || !Utils.isValidVideoFile(videoFile))
+        File videoFile = new File(videoFilePath);
+        if(!videoFile.exists() || !isValidVideoFile(videoFile))
             return null;
 
         try {
-            var fileHash = Utils.getSHA256Hash(videoFile);
-            JsonNode fileJsonNode = this.getVideoMetaData(path);
-            String title = Utils.getTitleFromPath(path);
-            String fileName = Utils.getFileNameFromPath(path);
-            String thumbnailPath = this.generateThumbnail(scanningRoot, path, fileHash);
-            long duration = Utils.getDurationInMillis(
-                    fileJsonNode
-                            .get("streams")
-                            .get(0)
-                            .get("tags")
-                            .get("DURATION")
-                            .asText()
-            );
+            var fileHash = getPartialHashWithFileSize(videoFile, 10);
+            JsonNode fileJsonNode = this.getVideoMetaData(videoFile.getAbsolutePath());
+            String title = getTitleFromPath(videoFilePath);
+            String fileName = getFileNameFromPath(videoFilePath);
+            String thumbnailPath = this.generateThumbnail(scanningRoot, videoFilePath, fileHash);
+            long duration = Optional.ofNullable(fileJsonNode)
+                    .map(node -> node.get("streams"))
+                    .filter(streams -> streams.isArray() && streams.size() > 0)
+                    .map(streams -> streams.get(0))
+                    .map(stream -> stream.get("tags"))
+                    .map(tags -> tags.get("DURATION"))
+                    .map(JsonNode::asText)
+                    .map(Utils::getDurationInMillis)
+                    .orElse(0L);
 
             video.setHash(fileHash);
             video.setTitle(title);
@@ -131,10 +134,11 @@ public class FFmpegService {
             video.setDuration(duration);
             video.setThumbnailPath(thumbnailPath);
             video.setUploadedAt(LocalDateTime.now());
+            video.setResourcePath(videoFilePath);
             return video;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new FFmpegServiceException("error occurred in creating the video object", e);
+            throw new FFmpegServiceException("error occurred in creating the video object for file: " + videoFilePath, e);
         }
     }
 

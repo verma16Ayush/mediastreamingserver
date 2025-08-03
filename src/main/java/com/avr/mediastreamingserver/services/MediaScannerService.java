@@ -1,15 +1,19 @@
 package com.avr.mediastreamingserver.services;
 
 import com.avr.mediastreamingserver.exceptions.FFmpegServiceException;
-import jakarta.annotation.PostConstruct;
+import com.avr.mediastreamingserver.exceptions.MediaScanningException;
+import com.avr.mediastreamingserver.models.Video;
+import com.avr.mediastreamingserver.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -21,19 +25,46 @@ public class MediaScannerService {
     @Autowired
     FFmpegService fFmpegService;
 
+    @Autowired
+    VideoService videoService;
 
+    List<FFmpegServiceException> fFmpegServiceExceptions;
 
-    @PostConstruct
-    public void initialiseScanning() throws FFmpegServiceException {
+    public MediaScannerService() {
+        fFmpegServiceExceptions = new ArrayList<>();
+    }
+
+    @Async("customThreadPoolExecutor")
+    public void initialiseScanning() throws MediaScanningException {
         MediaScannerService.log.info("initialising scanning for media directories");
-        mediaScanningRoots.forEach(log::info);
-        String filePath = mediaScanningRoots.get(0) + "/Lilo and Stich 2025 1080p REPACK WEB-DL HEVC x265 5.1 BONE.mkv";
-        File file = new File(filePath);
-        if(file.exists()) {
-            System.out.println(fFmpegService.getVideoObjectFromFilePath(mediaScanningRoots.get(0), filePath));
+        for (String mediaScanningRoot : mediaScanningRoots) {
+            log.info("scanning: {}", mediaScanningRoot);
+            File root = new File(mediaScanningRoot);
+            if (!root.exists()) continue;
+            discoverAndAddVideosToDB(root, root);
+            if(!fFmpegServiceExceptions.isEmpty()) {
+                throw new MediaScanningException("errors occurred while scanning for media directories");
+            }
         }
     }
 
-
+    private void discoverAndAddVideosToDB(File scanningRoot, File thisLoc) {
+        for(File file : Objects.requireNonNull(thisLoc.listFiles())) {
+            if(file.isDirectory()) {
+                if(Utils.directoryContainsFile(file, ".mss_ignore")) continue;
+                discoverAndAddVideosToDB(scanningRoot, file);
+            } else {
+                if(!Utils.isValidVideoFile(file)) continue;
+                try {
+                    Video video = fFmpegService.getVideoObjectFromFilePath(scanningRoot.getAbsolutePath(), file.getAbsolutePath());
+                    log.info("scanned: {}", video.getTitle());
+                    videoService.save(video);
+                } catch (FFmpegServiceException fe) {
+                    log.error(fe.getMessage());
+                    fFmpegServiceExceptions.add(fe);
+                }
+            }
+        }
+    }
 
 }
