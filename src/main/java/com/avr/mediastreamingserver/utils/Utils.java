@@ -8,9 +8,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Enumeration;
 
 public class Utils {
     public static boolean isValidVideoFile(File file) {
@@ -105,5 +112,31 @@ public class Utils {
         };
         File[] matchingFiles = directory.listFiles(filter);
         return matchingFiles != null && matchingFiles.length > 0;
+    }
+
+    public static String getLocalHostLANAddress() throws SocketException, UnknownHostException {
+        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+        while (networkInterfaces.hasMoreElements()) {
+            NetworkInterface ni = networkInterfaces.nextElement();
+
+            if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) continue;
+
+            for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                InetAddress addr = ia.getAddress();
+                if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+                    return addr.getHostAddress();
+                }
+            }
+        }
+
+        return InetAddress.getLocalHost().getHostAddress(); // fallback
+    }
+
+    public static String getFileExtensionFromPath(String path) {
+        File file = new File(path);
+        if(!file.exists())
+            return "";
+        return path.substring(path.lastIndexOf("."));
     }
 }

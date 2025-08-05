@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.List;
@@ -26,14 +27,18 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.avr.mediastreamingserver.dto.HealthCheckResponse;
+import com.avr.mediastreamingserver.dto.VideosResponse;
 import com.avr.mediastreamingserver.exceptions.FFmpegServiceException;
 import com.avr.mediastreamingserver.exceptions.VideoServiceException;
-import com.avr.mediastreamingserver.models.Video;
-import com.avr.mediastreamingserver.responseTypes.HealthCheckResponse;
 import com.avr.mediastreamingserver.services.FFmpegService;
 import com.avr.mediastreamingserver.services.VideoService;
+import com.avr.mediastreamingserver.utils.Utils;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
+@Slf4j
 public class Controller {
 
     @Autowired
@@ -46,10 +51,11 @@ public class Controller {
     VideoService videoService;
 
     @GetMapping("/healthCheck")
-    public ResponseEntity<HealthCheckResponse> healthCheck() throws FFmpegServiceException, UnknownHostException {
+    public ResponseEntity<HealthCheckResponse> healthCheck() throws FFmpegServiceException, UnknownHostException, SocketException {
         var ffmpegVersion = fFmpegService.ensureFFmpegInstalled();
         HealthCheckResponse healthCheckResponse = new HealthCheckResponse();
         healthCheckResponse.setHostAddress(InetAddress.getLocalHost().getHostAddress());
+        healthCheckResponse.setLanAddress(Utils.getLocalHostLANAddress());
         healthCheckResponse.setPort(String.valueOf(port));
         healthCheckResponse.setFfmpegVersion(ffmpegVersion);
         return ResponseEntity
@@ -58,11 +64,25 @@ public class Controller {
     }
 
     @GetMapping("/videos")
-    public ResponseEntity<Page<Video>> getAllVideos(
+    public ResponseEntity<Page<VideosResponse>> getAllVideos(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
-    ) {
-        return ResponseEntity.ok(videoService.getPaginatedVideos(page, size));
+    )  {
+        Page<VideosResponse> resp = videoService.getPaginatedVideos(page, size).map(video -> {
+            
+            try {
+                return new VideosResponse(
+                    video.getTitle(), 
+                    video.getHash(), 
+                    video.getDuration(), 
+                    String.format("http://%s:%s/thumbnails/%s%s", Utils.getLocalHostLANAddress(), port, video.getHash(), Utils.getFileExtensionFromPath(video.getThumbnailPath())),
+                    video.getUploadedAt());
+            } catch (SocketException | UnknownHostException e) {
+                log.error("error occured while listing videos {}", e.getMessage());
+                return new VideosResponse();
+            }
+        });
+        return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/stream")

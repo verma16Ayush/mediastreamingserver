@@ -1,4 +1,4 @@
-package com.avr.mediastreamingserver.responseTypes;
+package com.avr.mediastreamingserver.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,4 +13,5 @@ public class HealthCheckResponse {
     private String hostAddress;
     private String port;
     private String ffmpegVersion;
+    private String lanAddress;
 }
