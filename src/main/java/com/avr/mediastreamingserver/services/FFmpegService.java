@@ -47,6 +47,60 @@ public class FFmpegService {
         }
     }
 
+    public void convertAndReplaceFile(String inputFilePath) throws FFmpegServiceException {
+        File inputFile = new File(inputFilePath);
+        if (!inputFile.exists()) {
+            throw new FFmpegServiceException("File not found: " + inputFilePath);
+        }
+    
+        // Create temp output file path
+        String outputFilePath = inputFile.getParent() + File.separator +
+                inputFile.getName().replaceAll("\\.mkv$", "_tmp.mp4");
+    
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                "ffmpeg",
+                "-y",                  // overwrite output without asking
+                "-i", inputFilePath,
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                outputFilePath
+            );
+    
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+    
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log.info(line);
+                }
+            }
+    
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new FFmpegServiceException("FFmpeg failed with exit code " + exitCode);
+            }
+    
+            // Delete the original and replace with the converted file
+            if (!inputFile.delete()) {
+                throw new IOException("Failed to delete original file: " + inputFilePath);
+            }
+    
+            File outputFile = new File(outputFilePath);
+            if (!outputFile.renameTo(inputFile)) {
+                throw new IOException("Failed to rename temp file to original name");
+            }
+    
+            log.info("Successfully replaced original file with converted file");
+    
+        } catch (IOException | InterruptedException e) {
+            throw new FFmpegServiceException("Conversion process failed", e);
+        }
+    }
+
     private JsonNode getVideoMetaData(String videoPath) throws FFmpegServiceException {
         ProcessBuilder pb = new ProcessBuilder(
                 "ffprobe",
@@ -106,14 +160,13 @@ public class FFmpegService {
         }
     }
 
-    public Video getVideoObjectFromFilePath(String scanningRoot, String videoFilePath) throws FFmpegServiceException {
+    public Video getVideoObjectFromFilePath(String scanningRoot, String videoFilePath, String fileHash) throws FFmpegServiceException {
         Video video = new Video();
         File videoFile = new File(videoFilePath);
         if(!videoFile.exists() || !isValidVideoFile(videoFile))
             return null;
 
         try {
-            var fileHash = getPartialHashWithFileSize(videoFile, 10);
             JsonNode fileJsonNode = this.getVideoMetaData(videoFile.getAbsolutePath());
             String title = getTitleFromPath(videoFilePath);
             String fileName = getFileNameFromPath(videoFilePath);

@@ -74,7 +74,7 @@ public class Controller {
                 return new VideosResponse(
                     video.getTitle(), 
                     video.getHash(), 
-                    video.getDuration(), 
+                    video.getDuration() == null ? 0L : video.getDuration(), 
                     String.format("http://%s:%s/thumbnails/%s%s", Utils.getLocalHostLANAddress(), port, video.getHash(), Utils.getFileExtensionFromPath(video.getThumbnailPath())),
                     video.getUploadedAt());
             } catch (SocketException | UnknownHostException e) {

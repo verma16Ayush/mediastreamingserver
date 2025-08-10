@@ -11,6 +11,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -56,12 +58,19 @@ public class MediaScannerService {
             } else {
                 if(!Utils.isValidVideoFile(file)) continue;
                 try {
-                    Video video = fFmpegService.getVideoObjectFromFilePath(scanningRoot.getAbsolutePath(), file.getAbsolutePath());
+                    var fileHash = Utils.getPartialHashWithFileSize(file, 10);
+
+                    if(!videoService.findById(fileHash).isEmpty())
+                        continue;
+
+                    fFmpegService.convertAndReplaceFile(file.getAbsolutePath());
+                    Video video = fFmpegService.getVideoObjectFromFilePath(scanningRoot.getAbsolutePath(), file.getAbsolutePath(), fileHash);
                     log.info("scanned: {}", video.getTitle());
                     videoService.save(video);
-                } catch (FFmpegServiceException fe) {
+
+                } catch (FFmpegServiceException | NoSuchAlgorithmException | IOException fe) {
                     log.error(fe.getMessage());
-                    fFmpegServiceExceptions.add(fe);
+                    fFmpegServiceExceptions.add(new FFmpegServiceException(fe.getMessage(), fe.getCause()));
                 }
             }
         }

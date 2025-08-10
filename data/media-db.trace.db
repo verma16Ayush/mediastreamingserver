@@ -64,3 +64,15 @@ Caused by: java.lang.AssertionError
 	at org.h2.mvstore.FileStore.executeFileStoreOperation(FileStore.java:1893)
 	at org.h2.mvstore.MVStore.executeFilestoreOperation(MVStore.java:922)
 	... 13 more
+2025-08-10 12:50:17.952562+05:30 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "VIDEOS" not found; SQL statement:
+select * from videos [42102-232]
+2025-08-10 12:51:01.755480+05:30 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "delete [*]* from video where file_name = null"; expected "identifier"; SQL statement:
+delete * from video where file_name = null [42001-232]
+2025-08-10 12:52:02.798034+05:30 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "delete [*]* from video where file_name is null"; expected "identifier"; SQL statement:
+delete * from video where file_name is null [42001-232]
+2025-08-10 12:52:04.620415+05:30 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "delete [*]* from video where file_name is null"; expected "identifier"; SQL statement:
+delete * from video where file_name is null [42001-232]
